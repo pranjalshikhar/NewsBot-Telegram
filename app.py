@@ -1,14 +1,17 @@
 import logging
+import time
+
 from flask import Flask, request
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Dispatcher
-from telegram import Bot, Update
+from telegram import Bot, Update, ReplyKeyboardMarkup
+from telegram.ext import CommandHandler, MessageHandler, Filters, Dispatcher
+from utils import get_reply, fetch_news, topics_keyboard
 
 # enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # telegram bot token
-TOKEN = "751574535:AAEmH7gCd_fKSkE4cWt7cbrrQry8vX9fGf4"
+TOKEN = "1354404873:AAEubvrByyU-A9EWEH7Kn7yrXpi7xBih2H4"
 
 app = Flask(__name__)
 
@@ -41,10 +44,21 @@ def _help(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text=help_txt)
 
 
-def echo_text(bot, update):
+def news(bot, update):
+    """callback function for /news handler"""
+    bot.send_message(chat_id=update.message.chat_id, text="Choose a category",
+                     reply_markup=ReplyKeyboardMarkup(keyboard=topics_keyboard, one_time_keyboard=True))
+
+
+def reply_text(bot, update):
     """callback function for text message handler"""
-    reply = update.message.text
-    bot.send_message(chat_id=update.message.chat_id, text=reply)
+    intent, reply = get_reply(update.message.text, update.message.chat_id)
+    if intent == "get_news":
+        articles = fetch_news(reply)
+        for article in articles:
+            bot.send_message(chat_id=update.message.chat_id, text=article['link'])
+    else:
+        bot.send_message(chat_id=update.message.chat_id, text=reply)
 
 
 def echo_sticker(bot, update):
@@ -58,15 +72,20 @@ def error(bot, update):
     logger.error("Update '%s' caused error '%s'", update, update.error)
 
 
+bot = Bot(TOKEN)
+try:
+    bot.set_webhook("https://pollynews.herokuapp.com/" + TOKEN)
+    time.sleep(5)
+except Exception as e:
+    print(e)
+
+dp = Dispatcher(bot, None)
+dp.add_handler(CommandHandler("start", start))
+dp.add_handler(CommandHandler("help", _help))
+dp.add_handler(CommandHandler("news", news))
+dp.add_handler(MessageHandler(Filters.text, reply_text))
+dp.add_handler(MessageHandler(Filters.sticker, echo_sticker))
+dp.add_error_handler(error)
+
 if __name__ == "__main__":
-    bot = Bot(TOKEN)
-    bot.set_webhook("https://d5539887.ngrok.io/" + TOKEN)
-
-    dp = Dispatcher(bot, None)
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", _help))
-    dp.add_handler(MessageHandler(Filters.text, echo_text))
-    dp.add_handler(MessageHandler(Filters.sticker, echo_sticker))
-    dp.add_error_handler(error)
-
-    app.run(port=8443)
+    app.run(host='0.0.0.0')

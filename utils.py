@@ -4,7 +4,7 @@ import dialogflow_v2 as dialogflow
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "client.json"
 dialogflow_session_client = dialogflow.SessionsClient()
-PROJECT_ID = "newsbot-a171b"
+PROJECT_ID = "newsbot-ktrrxf"
 
 client = gnewsclient.NewsClient()
 
@@ -31,3 +31,10 @@ def fetch_news(parameters):
     client.location = parameters.get('geo-country')
     client.topic = parameters.get('topic')
     return client.get_news()[:5]
+
+
+topics_keyboard = [
+    ['Top Stories News', 'World News', 'Nation News'],
+    ['Business News', 'Technology News', 'Entertainment News'],
+    ['Sports News', 'Science News', 'Health News']
+]
