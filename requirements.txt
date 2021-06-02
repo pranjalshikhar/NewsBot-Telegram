@@ -31,5 +31,5 @@ rsa==4.7
 six==1.15.0
 setuptools==49.1.0
 tornado==6.0.4
-urllib3==1.25.9
+urllib3==1.26.5
 Werkzeug==1.0.1
